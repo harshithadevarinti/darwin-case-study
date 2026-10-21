@@ -7,10 +7,14 @@ on:
 jobs:
   collect:
     runs-on: macos-latest
+    defaults:
+      run:
+        shell: bash {0}
     steps:
       - uses: actions/checkout@v4
 
       - name: 1. Architecture
+        continue-on-error: true
         run: |
           echo "=== uname -a ==="; uname -a
           echo "=== sw_vers ==="; sw_vers
@@ -19,17 +23,20 @@ jobs:
           echo "=== hw ==="; sysctl hw.model hw.ncpu hw.memsize
 
       - name: 2. Process management
+        continue-on-error: true
         run: |
           echo "=== PID 1 (launchd) ==="; ps -p 1 -o pid,ppid,comm
           echo "=== Process list (top 15) ==="; ps aux | head -15
           echo "=== launchctl list (top 15) ==="; launchctl list | head -15
 
       - name: 3. CPU scheduling
+        continue-on-error: true
         run: |
           top -l 1 -n 10 | head -20
           echo "=== taskpolicy ==="; taskpolicy 2>&1 | head -5 || true
 
       - name: 4. Memory management
+        continue-on-error: true
         run: |
           vm_stat
           sysctl vm.swapusage vm.compressor_mode hw.pagesize
@@ -37,11 +44,13 @@ jobs:
           echo "=== vmmap of this shell ==="; vmmap $$ | head -40
 
       - name: 5. IPC (Mach ports)
+        continue-on-error: true
         run: |
           sudo lsmp -p 1 | head -40 || true
           launchctl print system | head -40 || true
 
       - name: 6. File system
+        continue-on-error: true
         run: |
           diskutil list
           diskutil apfs list || true
@@ -49,6 +58,7 @@ jobs:
           df -h
 
       - name: 7. Security
+        continue-on-error: true
         run: |
           csrutil status || true
           spctl --status || true
@@ -56,18 +66,21 @@ jobs:
           codesign -dvv /System/Applications/Calculator.app 2>&1 | head -15 || true
 
       - name: 8. Networking
+        continue-on-error: true
         run: |
           ifconfig | head -40
           netstat -an | head -25
           sudo pfctl -s info || true
 
       - name: 9. Drivers (I/O Kit)
+        continue-on-error: true
         run: |
           ioreg -l | head -60
           systemextensionsctl list || true
           kextstat 2>/dev/null | head -20 || true
 
       - name: 10. Compile and run demo programs
+        continue-on-error: true
         run: |
           cd programs
           for f in fork_demo threads_demo mach_task_info mach_ipc_demo vm_demo; do
